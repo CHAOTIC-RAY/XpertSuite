@@ -1,0 +1,5 @@
+{
+  "name": "MockupExpert - By ChaosStudio",
+  "description": "A professional product photography and furniture mockup generator using Gemini Nano Banana models. Upload product photos to place them in realistic settings, remove backgrounds, or change viewing angles.",
+  "requestFramePermissions": []
+}
