@@ -1,4 +1,5 @@
 import React from 'react';
+import { sounds } from '../services/soundService';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
@@ -13,13 +14,15 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   className = '',
   disabled,
+  onClick,
+  onMouseEnter,
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-all duration-300 transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
   
   const variants = {
     // Purple theme primary
-    primary: "bg-purple-600 hover:bg-purple-500 text-white focus:ring-purple-500 shadow-md border border-transparent",
+    primary: "bg-purple-600 hover:bg-purple-500 text-white focus:ring-purple-500 shadow-md border border-transparent hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]",
     // Dark secondary
     secondary: "bg-slate-700 hover:bg-slate-600 text-white focus:ring-slate-500 shadow-sm border border-slate-600",
     // Outline for dark theme
@@ -28,10 +31,26 @@ export const Button: React.FC<ButtonProps> = ({
     ghost: "text-slate-400 hover:bg-slate-800 hover:text-white focus:ring-slate-500"
   };
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!disabled && !isLoading) {
+      sounds.playClick();
+      if (onClick) onClick(e);
+    }
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!disabled) {
+      sounds.playHover();
+      if (onMouseEnter) onMouseEnter(e);
+    }
+  }
+
   return (
     <button 
       className={`${baseStyles} ${variants[variant]} ${className}`}
       disabled={disabled || isLoading}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       {...props}
     >
       {isLoading ? (

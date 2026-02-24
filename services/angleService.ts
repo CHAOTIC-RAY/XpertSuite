@@ -35,15 +35,22 @@ export const detectImageAngle = async (image: string): Promise<{yaw: number, pit
 };
 
 export const generateAngleView = async (image: string, yaw: number, pitch: number): Promise<{ resultBase64: string }> => {
-    const prompt = `Novel View Synthesis Task.
-              Input: Reference product image.
-              Task: Generate a high-fidelity view of the EXACT SAME object from a new camera angle.
-              Target Geometry: Azimuth (Yaw) ${yaw} degrees, Elevation (Pitch) ${pitch} degrees.
-              Strict Guidelines:
-              1. Identity Preservation: Do not alter the object's design, logo, label text, colors, or proportions.
-              2. Rotation Accuracy: Yaw ${yaw}°, Pitch ${pitch}°.
-              3. Background: Neutral studio background.
-              4. Style: Photorealistic, 8k resolution.`;
+    const prompt = `
+    NOVEL VIEW SYNTHESIS - STRICT GEOMETRY CONTROL.
+    
+    INPUT: Reference image of a product.
+    TASK: Rotate the object to match the specific target camera angle.
+    
+    TARGET ANGLE PARAMETERS:
+    - Azimuth (Yaw): ${yaw} degrees (0° is Front, 90° is Right Profile, 180° is Back, 270° is Left Profile).
+    - Elevation (Pitch): ${pitch} degrees (0° is Eye Level, 90° is Top Down view, -90° is Bottom Up view).
+    
+    REQUIREMENTS:
+    1. EXACT ROTATION: The output MUST correspond to the requested Yaw/Pitch. Do not output a generic angle.
+    2. IDENTITY PRESERVATION: The object details (logos, textures, shape) must match the input exactly.
+    3. BACKGROUND: Keep it clean/neutral to focus on the object geometry.
+    4. QUALITY: Photorealistic, 8k resolution, precise geometry.
+    `;
 
     const parts = [
         { inlineData: { mimeType: 'image/jpeg', data: cleanBase64(image) } },
@@ -51,8 +58,9 @@ export const generateAngleView = async (image: string, yaw: number, pitch: numbe
     ];
 
     try {
+        // Used gemini-3-pro-image-preview for high fidelity spatial manipulation
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-pro-image-preview',
             contents: { parts }
         });
 

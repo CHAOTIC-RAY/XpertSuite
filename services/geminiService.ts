@@ -1,7 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 
+// Retrieve API Key with fallback to localStorage (for Settings Modal support)
+export const getApiKey = (): string => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('chaoticx_api_key');
+    if (stored && stored.trim().length > 0) return stored.trim();
+  }
+  return process.env.API_KEY || '';
+};
+
+export const API_KEY = getApiKey();
+
 // Initialize the client
-export const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // Shared Helper: Clean Base64 string
 export const cleanBase64 = (str: string) => str.replace(/^data:image\/\w+;base64,/, '');

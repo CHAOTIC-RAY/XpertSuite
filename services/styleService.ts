@@ -4,10 +4,40 @@ export interface StyleOptions {
     stylePreset: string;
     customPrompt?: string;
     referenceImage?: string;
+    styleStrength?: number; // 1-100
 }
 
 export const generateStyleTransfer = async (image: string, options: StyleOptions): Promise<{ resultBase64: string }> => {
-    const prompt = `Style Transfer. Apply this style: ${options.stylePreset}. ${options.customPrompt || ''}`;
+    // We use Gemini 3 Pro for better instruction following regarding geometry preservation
+    const model = 'gemini-3-pro-image-preview';
+    
+    const strength = options.styleStrength || 50;
+    
+    let guidance = "";
+    if (strength < 30) {
+        guidance = "SUBTLE RETOUCHING. Change only lighting and color grading. Keep textures and materials exactly as they are. Do not alter geometry.";
+    } else if (strength < 70) {
+        guidance = "BALANCED STYLE TRANSFER. Apply the artistic style, textures, and lighting of the style prompt. However, STRICTLY PRESERVE the shape, outline, and perspective of the original object. The object must remain recognizable.";
+    } else {
+        guidance = "HEAVY STYLIZATION. You may reimagine the materials and textures completely to match the style (e.g. turning a photo into a sketch or 3D clay render). However, keep the general composition and subject placement.";
+    }
+
+    const prompt = `
+    TASK: Artistic Style Transfer.
+    
+    INPUT CONTEXT:
+    1. IMAGE 1: The "Content Image". Use this as the structural foundation. ${guidance}
+    ${options.referenceImage ? '2. IMAGE 2: The "Style Reference". Transfer the color palette, brushwork/rendering style, and lighting vibe of this image onto Image 1.' : ''}
+    
+    TARGET STYLE DESCRIPTION:
+    ${options.stylePreset}
+    ${options.customPrompt ? `Additional Details: ${options.customPrompt}` : ''}
+    
+    OUTPUT REQUIREMENTS:
+    - High fidelity, 8k resolution.
+    - If the style is photorealistic, ensure realistic shadows and reflections.
+    - If the style is artistic (sketch, clay), apply the effect consistently across the whole image.
+    `;
     
     const parts: any[] = [
         { inlineData: { mimeType: 'image/jpeg', data: cleanBase64(image) } }
@@ -21,7 +51,7 @@ export const generateStyleTransfer = async (image: string, options: StyleOptions
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: model,
             contents: { parts }
         });
 

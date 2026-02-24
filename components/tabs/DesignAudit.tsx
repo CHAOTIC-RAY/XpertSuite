@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ImageUploader } from '../ImageUploader';
-import { ImagePlus, X, Upload, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, XCircle, Zap, ClipboardCheck, Eye, Layers } from 'lucide-react';
+import { ImagePlus, X, Upload, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2, XCircle, Zap, ClipboardCheck, Eye, Layers, ChevronLeft, ChevronRight, MousePointer2 } from 'lucide-react';
 import { DesignCritique } from '../../types';
 import { analyzeDesign, generateHeatmap } from '../../services/auditService';
 import { compressAndResizeImage } from '../../services/geminiService';
@@ -8,31 +8,77 @@ import { compressAndResizeImage } from '../../services/geminiService';
 export const DesignAudit = () => {
     const [inputs, setInputs] = useState<string[]>([]);
     const [result, setResult] = useState<DesignCritique | null>(null);
-    const [heatmap, setHeatmap] = useState<string | null>(null);
+    const [heatmaps, setHeatmaps] = useState<(string | null)[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(true);
+    const [selectedPageIndex, setSelectedPageIndex] = useState(0);
 
     const handleImagesSelect = async (images: string[]) => {
         const compressed = await Promise.all(images.map(img => compressAndResizeImage(img, 1024)));
         setInputs([...inputs, ...compressed]);
+        // Reset results when new images are added to ensure consistency
+        if (result) {
+            setResult(null);
+            setHeatmaps([]);
+        }
     };
 
     const handleClearImage = (index: number) => {
-        setInputs(inputs.filter((_, i) => i !== index));
+        const newInputs = inputs.filter((_, i) => i !== index);
+        setInputs(newInputs);
+        if (heatmaps.length > index) {
+            setHeatmaps(heatmaps.filter((_, i) => i !== index));
+        }
+        if (selectedPageIndex >= newInputs.length) {
+            setSelectedPageIndex(Math.max(0, newInputs.length - 1));
+        }
+    };
+
+    const moveImage = (index: number, direction: -1 | 1, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= inputs.length) return;
+
+        const newInputs = [...inputs];
+        [newInputs[index], newInputs[newIndex]] = [newInputs[newIndex], newInputs[index]];
+        setInputs(newInputs);
+
+        // If heatmaps exist, move them too
+        if (heatmaps.length === inputs.length) {
+            const newHeatmaps = [...heatmaps];
+            [newHeatmaps[index], newHeatmaps[newIndex]] = [newHeatmaps[newIndex], newHeatmaps[index]];
+            setHeatmaps(newHeatmaps);
+        }
+
+        // Follow selection
+        if (selectedPageIndex === index) setSelectedPageIndex(newIndex);
+        else if (selectedPageIndex === newIndex) setSelectedPageIndex(index);
     };
 
     const runAudit = async () => {
         if (inputs.length === 0) return;
         setIsGenerating(true);
-        setHeatmap(null);
+        setHeatmaps([]);
         try {
-            // Run analysis and heatmap generation in parallel
-            const [auditRes, heatmapRes] = await Promise.all([
-                analyzeDesign(inputs),
-                generateHeatmap(inputs[0]) // Generate heatmap for the first page/image
+            // Run analysis on the collection
+            const auditPromise = analyzeDesign(inputs);
+            
+            // Run heatmap generation for ALL pages in parallel
+            // We map catch to null so one failure doesn't break the whole process
+            const heatmapPromises = inputs.map(img => 
+                generateHeatmap(img).catch(e => {
+                    console.error("Heatmap failed for image", e);
+                    return null;
+                })
+            );
+
+            const [auditRes, ...heatmapResults] = await Promise.all([
+                auditPromise, 
+                ...heatmapPromises
             ]);
+
             setResult(auditRes);
-            setHeatmap(heatmapRes);
+            setHeatmaps(heatmapResults);
         } catch (e) {
             console.error(e);
             alert("Audit failed. Please try again.");
@@ -68,7 +114,7 @@ export const DesignAudit = () => {
                     <div className="mb-12">
                         {inputs.length > 0 ? (
                             <div className="flex gap-6 overflow-x-auto custom-scrollbar pb-6 snap-x items-center px-2">
-                                <div className="h-[450px] aspect-[4/5] shrink-0 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center hover:bg-white/5 hover:border-yellow-500/50 transition-all cursor-pointer relative group bg-[#0a0a0c]">
+                                <div className="h-[300px] aspect-[4/5] shrink-0 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center hover:bg-white/5 hover:border-yellow-500/50 transition-all cursor-pointer relative group bg-[#0a0a0c]">
                                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <ImagePlus size={32} className="text-slate-500 group-hover:text-yellow-500 transition-colors"/>
                                     </div>
@@ -76,11 +122,26 @@ export const DesignAudit = () => {
                                     <div className="absolute inset-0 opacity-0"><ImageUploader onImagesSelect={handleImagesSelect} compact /></div>
                                 </div>
                                 {inputs.map((img, i) => (
-                                    <div key={i} className="relative h-[450px] aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shrink-0 snap-center group bg-black">
-                                        <img src={img} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"/>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
-                                        <button onClick={() => handleClearImage(i)} className="absolute top-4 right-4 p-2.5 bg-black/50 backdrop-blur rounded-full text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/10 hover:border-red-500"><X size={16}/></button>
-                                        <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur rounded-lg border border-white/10 text-[10px] font-bold text-white uppercase tracking-wider shadow-lg">Page {i + 1}</div>
+                                    <div 
+                                        key={i} 
+                                        onClick={() => setSelectedPageIndex(i)}
+                                        className={`relative h-[300px] aspect-[4/5] rounded-2xl overflow-hidden border shadow-2xl shrink-0 snap-center group bg-black transition-all cursor-pointer ${selectedPageIndex === i ? 'border-yellow-500 ring-2 ring-yellow-500/20 scale-105 z-10' : 'border-white/10 hover:border-white/30 opacity-60 hover:opacity-100'}`}
+                                    >
+                                        <img src={img} className="w-full h-full object-cover"/>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 pointer-events-none">
+                                            <div className="flex justify-between items-start pointer-events-auto">
+                                                <div className="flex gap-1">
+                                                    {i > 0 && <button onClick={(e) => moveImage(i, -1, e)} className="p-1.5 bg-black/60 backdrop-blur rounded-lg text-white hover:bg-white/20"><ChevronLeft size={14}/></button>}
+                                                    {i < inputs.length - 1 && <button onClick={(e) => moveImage(i, 1, e)} className="p-1.5 bg-black/60 backdrop-blur rounded-lg text-white hover:bg-white/20"><ChevronRight size={14}/></button>}
+                                                </div>
+                                                <button onClick={(e) => { e.stopPropagation(); handleClearImage(i); }} className="p-1.5 bg-black/60 backdrop-blur rounded-lg text-white hover:bg-red-500 hover:text-white text-slate-400"><X size={14}/></button>
+                                            </div>
+                                            <div className="text-[10px] font-bold text-white uppercase tracking-wider text-center">Page {i + 1}</div>
+                                        </div>
+                                        {/* Selection Indicator */}
+                                        {selectedPageIndex === i && (
+                                            <div className="absolute top-2 left-2 w-3 h-3 bg-yellow-500 rounded-full shadow-[0_0_10px_orange]"></div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -101,7 +162,7 @@ export const DesignAudit = () => {
                         <div className="flex flex-col items-center justify-center py-20 animate-pulse">
                             <div className="w-20 h-20 rounded-full border-4 border-yellow-500/30 border-t-yellow-500 animate-spin mb-6"></div>
                             <div className="text-lg font-bold text-white uppercase tracking-widest">Analyzing Design Metrics...</div>
-                            <p className="text-slate-500 text-sm mt-2">Generating Critique & Attention Heatmap</p>
+                            <p className="text-slate-500 text-sm mt-2">Generating Critique & Attention Heatmaps for {inputs.length} pages</p>
                         </div>
                     )}
 
@@ -131,47 +192,86 @@ export const DesignAudit = () => {
                             </div>
 
                             {/* Heatmap Section */}
-                            {heatmap && (
-                                <div className="mb-8 bg-[#0a0a0c] border border-white/10 rounded-3xl p-1 overflow-hidden">
-                                    <div className="bg-[#111] p-4 flex justify-between items-center rounded-t-[20px]">
-                                        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                                            <Eye size={16} className="text-purple-500"/> Visual Attention Analysis
-                                        </h3>
+                            <div className="mb-8 bg-[#0a0a0c] border border-white/10 rounded-3xl p-1 overflow-hidden shadow-2xl">
+                                <div className="bg-[#111] p-4 flex flex-col md:flex-row justify-between items-center rounded-t-[20px] gap-4">
+                                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                                        <Eye size={16} className="text-purple-500"/> Visual Attention Analysis 
+                                        <span className="text-slate-600">|</span> 
+                                        <span className="text-white">Page {selectedPageIndex + 1}</span>
+                                    </h3>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        {/* Pagination for heatmap if multiple */}
+                                        {inputs.length > 1 && (
+                                            <div className="flex items-center bg-black/40 rounded-lg border border-white/10 mr-4">
+                                                <button 
+                                                    onClick={() => setSelectedPageIndex(Math.max(0, selectedPageIndex - 1))}
+                                                    disabled={selectedPageIndex === 0}
+                                                    className="p-2 text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                                                >
+                                                    <ChevronLeft size={14}/>
+                                                </button>
+                                                <span className="text-[10px] font-bold text-slate-300 px-2 min-w-[60px] text-center">
+                                                    {selectedPageIndex + 1} / {inputs.length}
+                                                </span>
+                                                <button 
+                                                    onClick={() => setSelectedPageIndex(Math.min(inputs.length - 1, selectedPageIndex + 1))}
+                                                    disabled={selectedPageIndex === inputs.length - 1}
+                                                    className="p-2 text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                                                >
+                                                    <ChevronRight size={14}/>
+                                                </button>
+                                            </div>
+                                        )}
+
                                         <button 
                                             onClick={() => setShowHeatmap(!showHeatmap)}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase transition-colors text-slate-300"
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${showHeatmap ? 'bg-purple-900/30 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
                                         >
-                                            <Layers size={14}/> {showHeatmap ? 'Show Original' : 'Show Heatmap'}
+                                            <Layers size={14}/> {showHeatmap ? 'Heatmap ON' : 'Heatmap OFF'}
                                         </button>
                                     </div>
-                                    <div className="relative w-full h-[400px] lg:h-[500px] bg-black/50 flex items-center justify-center p-4">
-                                        <div className="relative h-full max-w-full aspect-[4/5] rounded-lg overflow-hidden shadow-2xl border border-white/5">
-                                            {/* Original Image Layer */}
+                                </div>
+
+                                <div className="relative w-full h-[500px] lg:h-[600px] bg-black/50 flex items-center justify-center p-4">
+                                    <div className="relative h-full max-w-full aspect-[4/5] rounded-lg overflow-hidden shadow-2xl border border-white/5 group">
+                                        
+                                        {/* Original Image Layer */}
+                                        <img 
+                                            src={inputs[selectedPageIndex]} 
+                                            className={`absolute inset-0 w-full h-full object-contain transition-all duration-500 ${showHeatmap && heatmaps[selectedPageIndex] ? 'grayscale brightness-[0.4] blur-[1px]' : 'grayscale-0 brightness-100'}`}
+                                            alt="Original"
+                                        />
+
+                                        {/* Heatmap Layer */}
+                                        {heatmaps[selectedPageIndex] ? (
                                             <img 
-                                                src={inputs[0]} 
-                                                className="absolute inset-0 w-full h-full object-contain"
-                                                alt="Original"
-                                            />
-                                            {/* Heatmap Layer */}
-                                            <img 
-                                                src={heatmap} 
-                                                className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${showHeatmap ? 'opacity-100' : 'opacity-0'}`}
+                                                src={heatmaps[selectedPageIndex]!} 
+                                                className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 mix-blend-screen ${showHeatmap ? 'opacity-100' : 'opacity-0'}`}
                                                 alt="Heatmap"
                                             />
-                                            
-                                            {/* Legend */}
-                                            <div className={`absolute bottom-4 left-4 bg-black/80 backdrop-blur-md p-3 rounded-xl border border-white/10 transition-opacity duration-300 ${showHeatmap ? 'opacity-100' : 'opacity-0'}`}>
-                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Attention Map</div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div><span className="text-[10px] text-white">High Focus</span></div>
-                                                    <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500"></div><span className="text-[10px] text-white">Medium</span></div>
-                                                    <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-white">Low Focus</span></div>
-                                                </div>
+                                        ) : (
+                                           showHeatmap && (
+                                               <div className="absolute inset-0 flex items-center justify-center">
+                                                   <div className="bg-black/80 text-white text-xs px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
+                                                       <XCircle size={14} className="text-red-500"/> Heatmap generation failed for this page
+                                                   </div>
+                                               </div>
+                                           )
+                                        )}
+                                        
+                                        {/* Legend */}
+                                        <div className={`absolute bottom-4 left-4 bg-black/90 backdrop-blur-md p-3 rounded-xl border border-white/10 transition-opacity duration-300 ${showHeatmap ? 'opacity-100' : 'opacity-0'}`}>
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><MousePointer2 size={10}/> User Focus</div>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div><span className="text-[10px] text-white font-medium">High Attention</span></div>
+                                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_5px_yellow]"></div><span className="text-[10px] text-white font-medium">Medium</span></div>
+                                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-[10px] text-white font-medium">Low Interest</span></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6">

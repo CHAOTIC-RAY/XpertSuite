@@ -5,6 +5,7 @@ export interface EditOptions {
     maskImage?: string; // Base64
     textEditMode?: boolean;
     isRemoveBg?: boolean;
+    sourceImages?: string[];
 }
 
 export const generateEdit = async (image: string, options: EditOptions): Promise<{ resultBase64: string }> => {
@@ -14,6 +15,10 @@ export const generateEdit = async (image: string, options: EditOptions): Promise
     } else {
         prompt = `Edit this image. Instruction: ${options.editInstruction}. Maintain style and realism.`;
         if (options.textEditMode) prompt += " Replace text in the image matching the style.";
+        
+        if (options.sourceImages && options.sourceImages.length > 0) {
+            prompt += `\n\nREFERENCE DATA: You have been provided with ${options.sourceImages.length} original source images following the main image. If the user refers to "the original", "the source", "product A", etc., refer to these images to recover details or fix hallucinations. Preserve the original product identity from these sources.`;
+        }
     }
 
     const parts: any[] = [
@@ -23,6 +28,13 @@ export const generateEdit = async (image: string, options: EditOptions): Promise
     if (options.maskImage) {
         parts.push({ inlineData: { mimeType: 'image/png', data: cleanBase64(options.maskImage) } });
         prompt += " Use the provided mask for inpainting.";
+    }
+
+    // Append source images context if available and not removing background
+    if (options.sourceImages && options.sourceImages.length > 0 && !options.isRemoveBg) {
+        options.sourceImages.forEach(src => {
+            parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(src) } });
+        });
     }
 
     parts.push({ text: prompt });

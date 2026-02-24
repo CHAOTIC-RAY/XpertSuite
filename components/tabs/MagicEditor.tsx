@@ -113,7 +113,7 @@ export const MagicEditor: React.FC<MagicEditorProps> = ({ inputs, setInputs, onG
                  <div className="absolute top-4 left-6 z-20 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 pointer-events-none"><span className="text-pink-500">Magic Edit</span><span className="text-slate-700">/</span><span>{maskHasContent ? 'Masking Active' : 'Canvas Ready'}</span></div>
                  <div className="flex-1 overflow-hidden relative flex items-center justify-center bg-[#080808]">
                       {editorImage ? (
-                          <div className="relative w-full h-full p-4 lg:p-12 flex items-center justify-center">
+                          <div className="relative w-full h-full p-4 lg:p-12 flex items-center justify-center animate-in fade-in zoom-in-[0.99] duration-500 ease-out-quint">
                               <div className="relative shadow-2xl rounded-lg overflow-hidden group border border-white/10 max-h-[70vh] lg:max-h-[85vh] max-w-[90vw] lg:max-w-[85vw]">
                                   <img src={editorImage.resultUrl} className="max-h-full max-w-full object-contain pointer-events-none select-none" onLoad={(e) => { if (canvasRef.current) { const img = e.currentTarget; canvasRef.current.width = img.width; canvasRef.current.height = img.height; } }} />
                                   <canvas ref={canvasRef} className="absolute inset-0 w-full h-full cursor-crosshair opacity-60" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} />
@@ -121,7 +121,7 @@ export const MagicEditor: React.FC<MagicEditorProps> = ({ inputs, setInputs, onG
                               </div>
                           </div>
                       ) : (
-                          <div className="flex flex-col items-center justify-center gap-6 opacity-80">
+                          <div className="flex flex-col items-center justify-center gap-6 opacity-80 animate-in fade-in duration-500">
                               <div className="w-32 h-32 relative group">
                                 <div className="absolute inset-0 bg-[#0a0a0c] rounded-2xl border-2 border-dashed border-slate-700 group-hover:border-purple-500 group-hover:bg-purple-900/10 transition-all flex flex-col items-center justify-center cursor-pointer shadow-2xl"><Upload className="text-slate-400 group-hover:text-purple-400 transition-colors" size={32} /></div>
                                 <div className="opacity-0 absolute inset-0"><ImageUploader onImagesSelect={handleImageSelect} compact /></div>
@@ -148,13 +148,13 @@ export const MagicEditor: React.FC<MagicEditorProps> = ({ inputs, setInputs, onG
                  {/* Controls */}
                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[95vw] lg:max-w-[90vw] flex flex-col gap-2 items-center pointer-events-none">
                       {editorImage && (
-                          <div className="w-full max-w-2xl bg-[#1a1a1a] border border-white/10 rounded-xl p-1.5 flex items-center shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-2 mb-1 pointer-events-auto">
+                          <div className="w-full max-w-2xl bg-[#1a1a1a] border border-white/10 rounded-xl p-1.5 flex items-center shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-2 duration-500 mb-1 pointer-events-auto">
                                <div className={`p-2 ${isTextEditMode ? 'text-green-400' : 'text-pink-500'}`}>{isTextEditMode ? <Type size={16}/> : <Sparkles size={16}/>}</div>
                                <input value={replaceText} onChange={(e)=>setReplaceText(e.target.value)} placeholder={isTextEditMode ? "Enter new text..." : "Describe edit (e.g., 'Remove object')..."} className="flex-1 bg-transparent border-none outline-none text-xs text-white placeholder-slate-500 px-2"/>
                                {replaceText && <button onClick={()=>setReplaceText('')} className="p-1 hover:text-white text-slate-500 mr-1"><X size={12}/></button>}
                           </div>
                       )}
-                      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 flex flex-wrap justify-center items-center gap-2 md:gap-4 shadow-2xl backdrop-blur-md relative pointer-events-auto">
+                      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 flex flex-wrap justify-center items-center gap-2 md:gap-4 shadow-2xl backdrop-blur-md relative pointer-events-auto animate-in slide-in-from-bottom-4 duration-500">
                            <div className="flex items-center gap-2 px-2"><span className="text-[10px] font-bold text-slate-500 uppercase mr-2 hidden md:block">Brush</span><input type="range" min="5" max="100" value={brushSize} onChange={(e)=>setBrushSize(Number(e.target.value))} className="w-16 md:w-24 h-1 bg-white/10 rounded-full accent-pink-500 cursor-pointer"/><div className="w-6 h-6 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-[10px] font-mono text-slate-300">{brushSize}</div></div>
                            <div className="h-6 w-px bg-white/10 hidden md:block"></div>
                            <div className="flex gap-1"><button onClick={undoMask} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors" title="Undo"><Undo2 size={16}/></button><button onClick={resetCanvas} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors" title="Clear Mask"><Eraser size={16}/></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={()=>setIsTextEditMode(!isTextEditMode)} className={`p-2 rounded-lg transition-all flex items-center gap-2 ${isTextEditMode ? 'bg-green-900/20 text-green-400 border border-green-900/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Text Mode"><Type size={16}/></button></div>
@@ -172,7 +172,7 @@ export const MagicEditor: React.FC<MagicEditorProps> = ({ inputs, setInputs, onG
                  </div>
              </div>
              {/* History */}
-             <div className="hidden lg:flex w-[340px] border-l border-white/5 bg-[#0a0a0c] flex-col z-30 shadow-2xl">
+             <div className="hidden lg:flex w-[340px] border-l border-white/5 bg-[#0a0a0c] flex-col z-30 shadow-2xl animate-in slide-in-from-right-4 duration-500">
                  <div className="p-4 border-b border-white/5 flex justify-between items-center bg-[#0f0f11]"><h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2"><Layers size={14}/> History</h3><div className="flex gap-2"><span className="text-[10px] bg-pink-900/20 text-pink-500 px-2 py-0.5 rounded border border-pink-500/20">{inputs.length} Sources</span></div></div>
                  <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-[#050505]">
                      {inputs.map((img, i) => (

@@ -49,10 +49,19 @@ export const analyzeDesign = async (images: string[]): Promise<DesignCritique> =
 };
 
 export const generateHeatmap = async (image: string): Promise<string> => {
-    const prompt = `Generate a visual saliency heatmap overlay for this design. 
-    Show where a user's eyes would likely focus first (Red/Hot areas) vs last (Blue/Cool areas) based on contrast, faces, and text hierarchy. 
-    Superimpose this semi-transparent heatmap on top of the original image to create a UX Attention Map. 
-    Keep the original content visible underneath.`;
+    const prompt = `
+    Generate a highly accurate Visual Saliency Heatmap simulation for this design, mimicking a professional eye-tracking study.
+    
+    1. ANALYZE VISUAL HIERARCHY: Identify focal points based on high contrast, faces/eyes, large typography, and bright saturated colors.
+    2. VISUALIZATION STYLE:
+       - Transform the original image into a darkened Grayscale background (roughly 30-40% brightness) to reduce visual noise.
+       - Overlay a smooth, nebulous Attention Heatmap using a 'Jet' or 'Turbo' color spectrum (Red = Maximum Attention/Focal Point, Yellow = High, Green = Medium, Blue = Low).
+       - Ensure the "Hot Spots" (Red) align perfectly with the key elements (e.g., main headline, product hero, CTA button, faces).
+       - The heatmap should look like a data visualization overlay, blending smoothly.
+       - PRESERVE THE ASPECT RATIO of the original image.
+    
+    Return the final composite image.
+    `;
 
     const parts = [
         { inlineData: { mimeType: 'image/jpeg', data: cleanBase64(image) } },
@@ -61,7 +70,7 @@ export const generateHeatmap = async (image: string): Promise<string> => {
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-pro-image-preview',
             contents: { parts }
         });
 

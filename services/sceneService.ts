@@ -72,6 +72,15 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
     // START PROMPT CONSTRUCTION
     let prompt = `Professional Product Photography, 8k Resolution, Photorealistic, Octane Render. `;
     
+    // GLOBAL IDENTITY CONSTRAINT
+    prompt += `
+    CRITICAL: PRESERVE PRODUCT IDENTITY.
+    The input image contains the EXACT product to be used.
+    You must NOT alter the product's geometry, shape, logo, text, or key design features.
+    The product must look identical to the input, placed naturally in the new environment.
+    Do NOT hallucinate new parts on the product.
+    `;
+
     // 1. Alpha/ISO Mode Handling (White Background)
     if (options.isAlphaMode) {
         prompt += `
@@ -82,16 +91,18 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
         `;
     } else {
         prompt += ` Room/Environment: ${options.roomType || 'Professional Studio'}. `;
+        prompt += ` Keep the background MINIMALIST and clean. MINIMIZE unnecessary background objects/clutter to keep focus strictly on the product(s).`;
     }
 
     // 2. Composition Logic (Group vs Single)
     if (options.fullVisibilityMode && images.length > 1) {
         prompt += `
-        GROUP SHOT COMPOSITION:
-        - Wide Angle Lens.
-        - Ensure ALL ${images.length} items are fully visible within the frame.
-        - Arrange them aesthetically (e.g., side-by-side or artistic cluster) but DO NOT overlap significantly.
-        - DO NOT CROP any item. Keep safe margins around the composition.
+        GROUP SHOT COMPOSITION (CRITICAL):
+        - You have received ${images.length} distinct input images.
+        - You MUST include ALL ${images.length} items in the final composition.
+        - Arrange them side-by-side or in an artistic cluster.
+        - DO NOT OMIT ANY PRODUCT.
+        - ENSURE FULL VISIBILITY of every item. Do not crop them.
         `;
     } else {
         // Single Item Focus
@@ -109,7 +120,13 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
 
     // 4. Strictness/Hallucination Control
     if (options.antiDuplicateStrength === 'high') {
-        prompt += ` STRICT INSTRUCTION: Maintain the exact identity, shape, and structure of the input product(s). Do not add imaginary parts.`;
+        prompt += ` 
+        STRICT FIDELITY MODE:
+        - Freeze the product's structure.
+        - Do not distort dimensions.
+        - Ensure any text or logos on the product remain legible and unchanged.
+        - The product is the reference truth; do not "improve" its design.
+        `;
     }
 
     // 5. Camera Angle
@@ -143,10 +160,12 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
             model: modelName,
             contents: { parts },
             config: {
-                imageConfig: modelName === 'gemini-3-pro-image-preview' && options.aspectRatio ? {
+                imageConfig: options.aspectRatio ? {
+                    // Map ratios. Note: 4:5 (Social Portrait) maps to '3:4' as '4:5' isn't a direct API option but is the closest vertical format.
                     aspectRatio: options.aspectRatio === AspectRatio.SQUARE ? "1:1" :
                                  options.aspectRatio === AspectRatio.LANDSCAPE ? "16:9" :
-                                 options.aspectRatio === AspectRatio.PORTRAIT ? "3:4" : "1:1"
+                                 options.aspectRatio === AspectRatio.PORTRAIT ? "3:4" : 
+                                 options.aspectRatio === AspectRatio.SOCIAL_PORTRAIT ? "3:4" : "1:1"
                 } : undefined
             }
         });

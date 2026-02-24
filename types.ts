@@ -8,6 +8,7 @@ declare global {
         options?: any
       ) => void;
     };
+    pdfjsLib: any;
   }
 }
 
@@ -22,9 +23,10 @@ export interface DesignCritique {
 export interface GeneratedImage {
   id: string;
   originalUrl: string;
+  sourceImages?: string[]; // For group shots
   resultUrl: string;
   prompt: string;
-  type: 'mockup' | 'remove-bg' | 'upscale' | 'angle' | 'edit' | 'smartedited' | 'style-transfer';
+  type: 'mockup' | 'remove-bg' | 'upscale' | 'angle' | 'edit' | 'smartedited' | 'style-transfer' | 'video' | 'pdf-analysis';
   timestamp: number;
   fidelityScore?: number;
   modelUsed?: string;
@@ -102,4 +104,14 @@ export interface VerificationResult {
   isMatch: boolean;
   score: number;
   reason: string;
+}
+
+// PDF Interface
+export interface PdfDocument {
+  id: string;
+  name: string;
+  content: string; // Extracted Text
+  pageCount: number;
+  fileSize: string;
+  originalFile: File; // Reference for visual rendering
 }

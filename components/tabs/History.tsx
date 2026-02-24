@@ -1,5 +1,5 @@
 import React from 'react';
-import { History as HistoryIcon, Trash2 } from 'lucide-react';
+import { History as HistoryIcon, Trash2, Images } from 'lucide-react';
 import { GeneratedImage } from '../../types';
 import { ResultsGallery } from '../ResultsGallery';
 
@@ -15,7 +15,7 @@ export const History: React.FC<HistoryProps> = ({ images, onClear }) => {
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                            <HistoryIcon size={32} className="text-slate-500"/> History
+                            <Images size={32} className="text-slate-500"/> Gallery
                         </h2>
                         <p className="text-slate-500 text-sm mt-1 font-mono uppercase tracking-widest">Global Generation Log</p>
                     </div>
@@ -33,8 +33,8 @@ export const History: React.FC<HistoryProps> = ({ images, onClear }) => {
                     <ResultsGallery images={images} />
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-30">
-                        <HistoryIcon size={64} className="text-slate-600 mb-4"/>
-                        <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">No History Yet</p>
+                        <Images size={64} className="text-slate-600 mb-4"/>
+                        <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">No Images Yet</p>
                         <p className="text-slate-600 text-sm mt-2">Generate some images to see them here.</p>
                     </div>
                 )}
