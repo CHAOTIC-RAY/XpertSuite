@@ -1,7 +1,8 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 import { Type } from "@google/genai";
 
 export const detectImageAngle = async (image: string): Promise<{yaw: number, pitch: number}> => {
+  const ai = getAi();
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -35,6 +36,7 @@ export const detectImageAngle = async (image: string): Promise<{yaw: number, pit
 };
 
 export const generateAngleView = async (image: string, yaw: number, pitch: number): Promise<{ resultBase64: string }> => {
+    const ai = getAi();
     const prompt = `
     NOVEL VIEW SYNTHESIS - STRICT GEOMETRY CONTROL.
     
@@ -58,9 +60,9 @@ export const generateAngleView = async (image: string, yaw: number, pitch: numbe
     ];
 
     try {
-        // Used gemini-3-pro-image-preview for high fidelity spatial manipulation
+        // Used gemini-2.5-flash-image for reliable spatial manipulation
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts }
         });
 

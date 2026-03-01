@@ -1,4 +1,4 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 
 export interface EditOptions {
     editInstruction: string;
@@ -9,6 +9,7 @@ export interface EditOptions {
 }
 
 export const generateEdit = async (image: string, options: EditOptions): Promise<{ resultBase64: string }> => {
+    const ai = getAi();
     let prompt = "";
     if (options.isRemoveBg) {
         prompt = "Remove the background. Return the object on a white background (or transparent if supported).";

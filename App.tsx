@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Wand2, Compass, Maximize2, BoxSelect, Palette, FileCode, ClipboardCheck, History as HistoryIcon, Images, Film, Home, FileText } from 'lucide-react';
+import { Settings, X, Wand2, Compass, Maximize2, BoxSelect, Palette, FileCode, ClipboardCheck, History as HistoryIcon, Images, Film, Home, FileText, Cloud, CloudUpload, CloudDownload, LogOut, LogIn } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { SceneGenerator } from './components/tabs/SceneGenerator';
 import { AngleStudio } from './components/tabs/AngleStudio';
@@ -27,18 +27,121 @@ const XpertLogoSmall = ({ className }: { className?: string }) => (
     </svg>
 );
 
-const SettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+// Settings Modal with Google Drive Backup
+const SettingsModal = ({ isOpen, onClose, user, onLogin, onLogout, onBackup, onRestore }: any) => {
     const [apiKey, setApiKey] = useState('');
-    useEffect(() => { const stored = localStorage.getItem('chaoticx_api_key'); if (stored) setApiKey(stored); }, []);
-    const handleSave = () => { if (apiKey.trim()) localStorage.setItem('chaoticx_api_key', apiKey.trim()); else localStorage.removeItem('chaoticx_api_key'); onClose(); window.location.reload(); };
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+
+    useEffect(() => { 
+        const stored = localStorage.getItem('chaoticx_api_key'); 
+        if (stored) setApiKey(stored); 
+    }, []);
+
+    const handleSave = () => { 
+        if (apiKey.trim()) localStorage.setItem('chaoticx_api_key', apiKey.trim()); 
+        else localStorage.removeItem('chaoticx_api_key'); 
+        onClose(); 
+        window.location.reload(); 
+    };
+
+    const handleBackupClick = async () => {
+        setIsBackingUp(true);
+        await onBackup();
+        setIsBackingUp(false);
+    };
+
+    const handleRestoreClick = async () => {
+        setIsRestoring(true);
+        await onRestore();
+        setIsRestoring(false);
+    };
+
     if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center animate-in fade-in p-4">
-            <div className="glass-panel rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
-                <h2 className="text-xl font-bold text-white mb-6">System Settings</h2>
-                <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Enter Google Gemini API Key..." className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 outline-none mb-2" />
-                <div className="flex justify-end gap-3 mt-4"><button onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">CANCEL</button><button onClick={handleSave} className="px-6 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200">SAVE</button></div>
+            <div className="glass-panel rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in zoom-in-95 duration-300 border border-white/10">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Settings size={20} className="text-purple-400"/> System Settings</h2>
+                
+                <div className="space-y-6">
+                    {/* API Key Section */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-end">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gemini API Key</label>
+                            <a 
+                                href="https://aistudio.google.com/app/apikey" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-[9px] text-purple-400 hover:underline flex items-center gap-1"
+                            >
+                                Get API Key <X size={8} className="rotate-45"/>
+                            </a>
+                        </div>
+                        <input 
+                            type="password" 
+                            value={apiKey} 
+                            onChange={(e) => setApiKey(e.target.value)} 
+                            placeholder="Enter Google Gemini API Key..." 
+                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 outline-none transition-all" 
+                        />
+                        <p className="text-[9px] text-slate-500 leading-relaxed">
+                            Don't have a key? Visit the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">Google AI Studio</a> to generate your free Gemini API key.
+                        </p>
+                    </div>
+
+                    {/* Google Drive Section */}
+                    <div className="space-y-3 pt-4 border-t border-white/5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cloud Sync (Google Drive)</label>
+                        
+                        {!user ? (
+                            <button 
+                                onClick={onLogin}
+                                className="w-full flex items-center justify-center gap-3 bg-white text-black rounded-xl py-3 text-xs font-bold hover:bg-slate-200 transition-all active:scale-95"
+                            >
+                                <LogIn size={16}/> Login with Google
+                            </button>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                                    <img src={user.picture} className="w-10 h-10 rounded-full border border-white/20" alt="Profile" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-white truncate">{user.name}</div>
+                                        <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
+                                    </div>
+                                    <button onClick={onLogout} className="p-2 text-slate-500 hover:text-red-400 transition-colors" title="Logout">
+                                        <LogOut size={16}/>
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        onClick={handleBackupClick}
+                                        disabled={isBackingUp}
+                                        className="flex flex-col items-center justify-center gap-2 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-xl py-4 hover:bg-purple-600/30 transition-all disabled:opacity-50"
+                                    >
+                                        <CloudUpload size={20} className={isBackingUp ? 'animate-bounce' : ''}/>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Backup</span>
+                                    </button>
+                                    <button 
+                                        onClick={handleRestoreClick}
+                                        disabled={isRestoring}
+                                        className="flex flex-col items-center justify-center gap-2 bg-green-600/20 border border-green-500/30 text-green-400 rounded-xl py-4 hover:bg-green-600/30 transition-all disabled:opacity-50"
+                                    >
+                                        <CloudDownload size={20} className={isRestoring ? 'animate-bounce' : ''}/>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Restore</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-white/5">
+                    <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">CANCEL</button>
+                    <button onClick={handleSave} className="px-8 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all shadow-lg shadow-white/10">SAVE & RELOAD</button>
+                </div>
             </div>
         </div>
     );
@@ -78,6 +181,7 @@ const PageTransition = ({ children, transitionKey, isScrollable }: { children?: 
 export const App: React.FC = () => {
   const [activePage, setActivePage] = useState<'landing' | 'generator' | 'editor' | 'history' | 'angle_studio' | 'upscale' | 'svg_converter' | 'style_transfer' | 'audit' | 'video' | 'pdf'>('landing');
   const [showSettings, setShowSettings] = useState(false);
+  const [user, setUser] = useState<any>(null);
   
   const [genInputs, setGenInputs] = useState<string[]>([]);
   const [angleInputs, setAngleInputs] = useState<string[]>([]);
@@ -91,8 +195,82 @@ export const App: React.FC = () => {
   const [pdfDocuments, setPdfDocuments] = useState<PdfDocument[]>([]);
   const [pdfChatHistory, setPdfChatHistory] = useState<ChatMessage[]>([]);
 
+  // Check auth on mount
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setUser(data))
+      .catch(() => setUser(null));
+  }, []);
+
   useEffect(() => { const c = localStorage.getItem(STORAGE_KEY); if (c) { try { const d = JSON.parse(c); setGenInputs(d.gen||[]); setAngleInputs(d.ang||[]); setUpscaleInputs(d.up||[]); setEditInputs(d.edit||[]); setStyleInputs(d.style||[]); setVideoInputs(d.video||[]); setGeneratedImages(d.genImg||[]); } catch(e){} } }, []);
   useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, genImg: generatedImages })); } catch (e) {} }, [genInputs, angleInputs, upscaleInputs, editInputs, styleInputs, videoInputs, generatedImages]);
+
+  const handleGoogleLogin = async () => {
+    try {
+        const res = await fetch('/api/auth/google/url');
+        const { url } = await res.json();
+        const popup = window.open(url, 'google_auth', 'width=500,height=600');
+        
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+                fetch('/api/auth/me', { credentials: 'include' })
+                    .then(res => res.json())
+                    .then(data => {
+                        setUser(data);
+                        window.removeEventListener('message', handleMessage);
+                    });
+            }
+        };
+        window.addEventListener('message', handleMessage);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleGoogleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    setUser(null);
+  };
+
+  const handleBackup = async () => {
+    const data = {
+        apiKey: localStorage.getItem('chaoticx_api_key'),
+        appState: { gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, genImg: generatedImages }
+    };
+    try {
+        const res = await fetch('/api/drive/backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data }),
+            credentials: 'include'
+        });
+        if (res.ok) alert('Backup successful!');
+        else alert('Backup failed.');
+    } catch (e) { alert('Backup failed.'); }
+  };
+
+  const handleRestore = async () => {
+    try {
+        const res = await fetch('/api/drive/backup', { credentials: 'include' });
+        if (res.ok) {
+            const { data } = await res.json();
+            if (data.apiKey) localStorage.setItem('chaoticx_api_key', data.apiKey);
+            if (data.appState) {
+                const d = data.appState;
+                setGenInputs(d.gen||[]);
+                setAngleInputs(d.ang||[]);
+                setUpscaleInputs(d.up||[]);
+                setEditInputs(d.edit||[]);
+                setStyleInputs(d.style||[]);
+                setVideoInputs(d.video||[]);
+                setGeneratedImages(d.genImg||[]);
+            }
+            alert('Restore successful! Reloading...');
+            window.location.reload();
+        } else {
+            alert('No backup found.');
+        }
+    } catch (e) { alert('Restore failed.'); }
+  };
 
   const handleGenerate = (img: GeneratedImage) => setGeneratedImages(prev => [img, ...prev]);
   const handleDeleteImages = (ids: string[]) => setGeneratedImages(prev => prev.filter(img => !ids.includes(img.id)));
@@ -127,7 +305,15 @@ export const App: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-[#020202] text-slate-200 font-sans selection:bg-purple-500/30 overflow-hidden flex flex-col md:flex-row">
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+        user={user}
+        onLogin={handleGoogleLogin}
+        onLogout={handleGoogleLogout}
+        onBackup={handleBackup}
+        onRestore={handleRestore}
+      />
       
       {activePage !== 'landing' && (
           <div className="hidden md:flex w-20 h-full border-r border-white/5 bg-[#050505] flex-col items-center py-6 z-50 shrink-0 animate-in slide-in-from-left-4 duration-500">
@@ -167,7 +353,7 @@ export const App: React.FC = () => {
 
       <div className={`flex-1 relative bg-black flex flex-col ${activePage !== 'landing' ? 'mb-[70px] md:mb-0 overflow-hidden' : 'overflow-y-auto'}`}>
           <PageTransition transitionKey={activePage} isScrollable={activePage === 'landing'}>
-            {activePage === 'landing' && <LandingPage onNavigate={(p) => { sounds.playClick(); setActivePage(p); }} />}
+            {activePage === 'landing' && <LandingPage onNavigate={(p) => { sounds.playClick(); setActivePage(p); }} onOpenSettings={() => setShowSettings(true)} />}
             {activePage === 'generator' && <SceneGenerator inputs={genInputs} setInputs={setGenInputs} onGenerate={handleGenerate} onTransfer={handleTransfer} handleClearImage={handleClearImage} handleClearAll={handleClearAll} generatedImages={generatedImages} onDeleteImages={handleDeleteImages} />}
             {activePage === 'angle_studio' && <AngleStudio inputs={angleInputs} setInputs={setAngleInputs} onGenerate={handleGenerate} onTransfer={handleTransfer} />}
             {activePage === 'video' && <VideoInterpolator inputs={videoInputs} setInputs={setVideoInputs} onGenerate={handleGenerate} />}

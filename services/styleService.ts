@@ -1,4 +1,4 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 
 export interface StyleOptions {
     stylePreset: string;
@@ -8,8 +8,9 @@ export interface StyleOptions {
 }
 
 export const generateStyleTransfer = async (image: string, options: StyleOptions): Promise<{ resultBase64: string }> => {
-    // We use Gemini 3 Pro for better instruction following regarding geometry preservation
-    const model = 'gemini-3-pro-image-preview';
+    const ai = getAi();
+    // We use Gemini 2.5 Flash Image for better accessibility and reliable performance
+    const model = 'gemini-2.5-flash-image';
     
     const strength = options.styleStrength || 50;
     

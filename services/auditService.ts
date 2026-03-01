@@ -1,7 +1,8 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 import { DesignCritique } from '../types';
 
 export const analyzeDesign = async (images: string[]): Promise<DesignCritique> => {
+  const ai = getAi();
   try {
     const parts: any[] = [];
     for (const img of images) {
@@ -49,6 +50,7 @@ export const analyzeDesign = async (images: string[]): Promise<DesignCritique> =
 };
 
 export const generateHeatmap = async (image: string): Promise<string> => {
+    const ai = getAi();
     const prompt = `
     Generate a highly accurate Visual Saliency Heatmap simulation for this design, mimicking a professional eye-tracking study.
     
@@ -70,7 +72,7 @@ export const generateHeatmap = async (image: string): Promise<string> => {
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts }
         });
 

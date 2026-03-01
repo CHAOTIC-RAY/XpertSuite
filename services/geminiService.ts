@@ -11,8 +11,18 @@ export const getApiKey = (): string => {
 
 export const API_KEY = getApiKey();
 
-// Initialize the client
-export const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Initialize the client lazily to ensure it always uses the most up-to-date API key
+let aiInstance: GoogleGenAI | null = null;
+let currentKey: string | null = null;
+
+export const getAi = () => {
+  const key = getApiKey();
+  if (!aiInstance || currentKey !== key) {
+    currentKey = key;
+    aiInstance = new GoogleGenAI({ apiKey: key });
+  }
+  return aiInstance;
+};
 
 // Shared Helper: Clean Base64 string
 export const cleanBase64 = (str: string) => str.replace(/^data:image\/\w+;base64,/, '');

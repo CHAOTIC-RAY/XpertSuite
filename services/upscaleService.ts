@@ -1,4 +1,4 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 
 export interface UpscaleOptions {
     scaleFactor: '2x' | '4x' | '6x' | '8x';
@@ -12,6 +12,7 @@ export interface UpscaleOptions {
 }
 
 export const generateUpscale = async (image: string, options: UpscaleOptions): Promise<{ resultBase64: string }> => {
+    const ai = getAi();
     const prompt = `Upscale this image. High resolution, 4k, sharp details. ${options.customPrompt || ''} 
                     Style: ${options.upscaleModel}. 
                     Creativity Level: ${options.upscaleCreativityLevel}.
@@ -25,7 +26,7 @@ export const generateUpscale = async (image: string, options: UpscaleOptions): P
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts }
         });
 

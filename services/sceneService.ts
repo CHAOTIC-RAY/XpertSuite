@@ -1,7 +1,8 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 import { RoomType, AngleType, AspectRatio, LightingOptions } from '../types';
 
 export const detectProductType = async (image: string): Promise<string> => {
+  const ai = getAi();
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -20,6 +21,7 @@ export const detectProductType = async (image: string): Promise<string> => {
 };
 
 export const suggestRoomSettings = async (image: string, label: string): Promise<RoomType> => {
+  const ai = getAi();
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -66,8 +68,9 @@ export interface SceneGenOptions {
 }
 
 export const generateScene = async (images: string[], options: SceneGenOptions): Promise<{ resultBase64: string }> => {
+    const ai = getAi();
     // Select model based on fidelity toggle
-    const modelName = options.fidelityMode === 'high' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+    const modelName = 'gemini-2.5-flash-image';
     
     // START PROMPT CONSTRUCTION
     let prompt = `Professional Product Photography, 8k Resolution, Photorealistic, Octane Render. `;

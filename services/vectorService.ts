@@ -1,6 +1,7 @@
-import { cleanBase64, ai } from "./geminiService";
+import { cleanBase64, getAi } from "./geminiService";
 
 export const generateSVG = async (image: string): Promise<string> => {
+    const ai = getAi();
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',

@@ -1,4 +1,4 @@
-import { cleanBase64, ai, API_KEY } from "./geminiService";
+import { cleanBase64, getAi, API_KEY } from "./geminiService";
 
 export const TRANSITION_PRESETS: Record<string, string> = {
     'smart-morph': "Smoothly morph the first image into the second image. Keep the camera steady, focus on transforming the objects naturally. High quality, cinematic.",
@@ -11,6 +11,7 @@ export const TRANSITION_PRESETS: Record<string, string> = {
 };
 
 export const generateVideoInterpolation = async (startImage: string, endImage: string | null, prompt: string | null, presetId?: string): Promise<string> => {
+    const ai = getAi();
     try {
         const input: any = {
             model: 'veo-3.1-fast-generate-preview',

@@ -1,4 +1,4 @@
-import { ai, cleanBase64 } from "./geminiService";
+import { getAi, cleanBase64 } from "./geminiService";
 import { ChatMessage, PdfDocument } from "../types";
 
 // Helper: Convert specific PDF pages to Base64 Images
@@ -78,6 +78,7 @@ export const chatWithDocuments = async (
     history: ChatMessage[],
     useVisualAnalysis: boolean = false
 ): Promise<string> => {
+    const ai = getAi();
     try {
         const parts: any[] = [];
         

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Wand2, Compass, Maximize2, BoxSelect, Zap, Palette, ClipboardCheck, FileCode, Film, FileText } from 'lucide-react';
+import { Wand2, Compass, Maximize2, BoxSelect, Zap, Palette, ClipboardCheck, FileCode, Film, FileText, Settings } from 'lucide-react';
 import { sounds } from '../services/soundService';
 
 interface LandingPageProps {
   onNavigate: (page: 'generator' | 'editor' | 'history' | 'angle_studio' | 'upscale' | 'style_transfer' | 'audit' | 'svg_converter' | 'video' | 'pdf') => void;
+  onOpenSettings: () => void;
 }
 
 // Metallic Winged Logo Component
@@ -17,7 +18,7 @@ const XpertLogo = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onOpenSettings }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -28,9 +29,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         setMousePos({ x, y });
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        
+        const key = e.key;
+        if (key === '1') onNavigate('generator');
+        if (key === '2') onNavigate('angle_studio');
+        if (key === '3') onNavigate('video');
+        if (key === '4') onNavigate('upscale');
+        if (key === '5') onNavigate('editor');
+        if (key === '6') onNavigate('style_transfer');
+        if (key === '7') onNavigate('svg_converter');
+        if (key === '8') onNavigate('pdf');
+        if (key === '9') onNavigate('audit');
+        if (key === '0') onNavigate('history');
+        if (key === ',') onOpenSettings();
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onNavigate, onOpenSettings]);
 
   return (
     <div className="min-h-screen text-slate-200 font-sans selection:bg-purple-500/30 relative bg-[#030014]">
@@ -100,17 +122,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                     <div className="absolute inset-0 bg-white/10 blur-2xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                     <XpertLogo className="w-full h-full drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
                 </div>
+                <div className="flex flex-col">
+                    <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter leading-none">XpertStudio</h1>
+                    <span className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.3em] mt-1">Creative Suite</span>
+                </div>
             </div>
             
-            {/* Status Indicator */}
+            {/* Settings Button */}
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 shadow-lg backdrop-blur-md hover:bg-white/10 transition-colors cursor-default">
-                    <div className="relative">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 block"></span>
-                        <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></span>
-                    </div>
-                    SYSTEM OPERATIONAL
-                </div>
+                <button 
+                    onClick={() => { sounds.playClick(); onOpenSettings(); }}
+                    onMouseEnter={() => sounds.playHover()}
+                    className="flex items-center gap-3 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-white shadow-xl backdrop-blur-md hover:bg-white/10 hover:border-purple-500/50 transition-all active:scale-95 group"
+                >
+                    <Settings size={16} className="text-purple-400 group-hover:rotate-90 transition-transform duration-500" />
+                    <span className="uppercase tracking-widest">System Settings</span>
+                    <span className="ml-2 px-1.5 py-0.5 rounded bg-white/10 text-[9px] opacity-40">,</span>
+                </button>
             </div>
         </header>
 
@@ -153,6 +181,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Environment" 
                 icon={Wand2} 
                 color="purple" 
+                shortcut="1"
                 onClick={() => onNavigate('generator')} 
             />
 
@@ -162,6 +191,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="3D Rotation" 
                 icon={Compass} 
                 color="blue" 
+                shortcut="2"
                 onClick={() => onNavigate('angle_studio')} 
             />
 
@@ -171,6 +201,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Video Interpolation" 
                 icon={Film} 
                 color="pink" 
+                shortcut="3"
                 onClick={() => onNavigate('video')} 
                 hideOnMobile={true}
             />
@@ -181,6 +212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Upscale" 
                 icon={Maximize2} 
                 color="green" 
+                shortcut="4"
                 onClick={() => onNavigate('upscale')} 
             />
 
@@ -190,6 +222,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Inpainting" 
                 icon={BoxSelect} 
                 color="rose" 
+                shortcut="5"
                 onClick={() => onNavigate('editor')} 
             />
 
@@ -199,6 +232,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Aesthetics" 
                 icon={Palette} 
                 color="orange" 
+                shortcut="6"
                 onClick={() => onNavigate('style_transfer')} 
             />
 
@@ -208,6 +242,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Raster to SVG" 
                 icon={FileCode} 
                 color="cyan" 
+                shortcut="7"
                 onClick={() => onNavigate('svg_converter')} 
                 hideOnMobile={true}
             />
@@ -218,6 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="Chat & Compare" 
                 icon={FileText} 
                 color="teal" 
+                shortcut="8"
                 onClick={() => onNavigate('pdf')} 
             />
 
@@ -227,6 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 subtitle="AI Analysis" 
                 icon={ClipboardCheck} 
                 color="yellow" 
+                shortcut="9"
                 onClick={() => onNavigate('audit')} 
             />
 
@@ -244,7 +281,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   );
 };
 
-const NavCard = ({ title, subtitle, icon: Icon, color, onClick, hideOnMobile }: any) => {
+const NavCard = ({ title, subtitle, icon: Icon, color, onClick, hideOnMobile, shortcut }: any) => {
     const styles: Record<string, { iconBg: string, border: string, gradient: string }> = {
         purple: { iconBg: "text-purple-400 group-hover:bg-purple-500/20 group-hover:shadow-[0_0_40px_rgba(168,85,247,0.3)]", border: "hover:border-purple-500/50", gradient: "from-purple-500/5" },
         blue: { iconBg: "text-blue-400 group-hover:bg-blue-500/20 group-hover:shadow-[0_0_40px_rgba(59,130,246,0.3)]", border: "hover:border-blue-500/50", gradient: "from-blue-500/5" },
@@ -266,6 +303,14 @@ const NavCard = ({ title, subtitle, icon: Icon, color, onClick, hideOnMobile }: 
             className={`col-span-1 min-h-[220px] bg-[#0a0a0c]/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-5 cursor-pointer transition-all duration-300 group flex flex-col items-center justify-center relative overflow-hidden transform hover:-translate-y-1 hover:shadow-2xl ${s.border} ${hideOnMobile ? 'hidden md:flex' : 'flex'}`}
         >
             <div className={`absolute inset-0 bg-gradient-to-br ${s.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+            
+            {/* Shortcut Tooltip */}
+            {shortcut && (
+                <div className="absolute top-6 right-6 px-2 py-1 rounded bg-white/5 border border-white/10 text-[9px] font-bold text-slate-500 opacity-40 group-hover:opacity-100 transition-opacity">
+                    {shortcut}
+                </div>
+            )}
+
             <div className={`w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${s.iconBg}`}>
                 <Icon size={32} strokeWidth={1.5}/>
             </div>
