@@ -6,9 +6,11 @@ import { ResultsGallery } from '../ResultsGallery';
 interface HistoryProps {
     images: GeneratedImage[];
     onClear: () => void;
+    onDelete: (id: string) => void;
+    onChat: (url: string) => void;
 }
 
-export const History: React.FC<HistoryProps> = ({ images, onClear }) => {
+export const History: React.FC<HistoryProps> = ({ images, onClear, onDelete, onChat }) => {
     return (
         <div className="absolute inset-0 bg-[#050505] overflow-y-auto custom-scrollbar p-4 lg:p-8 pb-32 lg:pb-8">
             <div className="max-w-[1400px] mx-auto">
@@ -30,7 +32,7 @@ export const History: React.FC<HistoryProps> = ({ images, onClear }) => {
                 </div>
                 
                 {images.length > 0 ? (
-                    <ResultsGallery images={images} />
+                    <ResultsGallery images={images} onDelete={onDelete} onChat={onChat} />
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-30">
                         <Images size={64} className="text-slate-600 mb-4"/>

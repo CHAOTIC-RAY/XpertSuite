@@ -57,7 +57,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelect, co
 
   if (compact) {
     return (
-      <div className="relative group overflow-hidden border-2 border-dashed border-slate-700 hover:border-purple-500 hover:bg-slate-800/50 bg-slate-800/20 rounded-xl transition-all h-full w-full flex flex-col items-center justify-center cursor-pointer">
+      <div 
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`relative group overflow-hidden border-2 border-dashed transition-all h-full w-full flex flex-col items-center justify-center cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-slate-700 hover:border-purple-500 hover:bg-slate-800/50 bg-slate-800/20 rounded-xl'}`}
+      >
         <input
           type="file"
           accept="image/*"
@@ -65,7 +70,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImagesSelect, co
           onChange={handleFileChange}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
-        <Upload size={20} className="text-slate-400" />
+        <Upload size={20} className={isDragging ? 'text-purple-400' : 'text-slate-400'} />
       </div>
     );
   }

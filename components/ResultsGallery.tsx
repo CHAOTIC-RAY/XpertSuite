@@ -1,12 +1,14 @@
 import React from 'react';
 import { GeneratedImage } from '../types';
-import { Download, Maximize2, MessageSquare, Edit3 } from 'lucide-react';
+import { Download, Maximize2, MessageSquare, Edit3, Trash2 } from 'lucide-react';
 
 interface ResultsGalleryProps {
   images: GeneratedImage[];
+  onDelete?: (id: string) => void;
+  onChat?: (url: string) => void;
 }
 
-export const ResultsGallery: React.FC<ResultsGalleryProps> = ({ images }) => {
+export const ResultsGallery: React.FC<ResultsGalleryProps> = ({ images, onDelete, onChat }) => {
   if (images.length === 0) return null;
 
   return (
@@ -28,30 +30,15 @@ export const ResultsGallery: React.FC<ResultsGalleryProps> = ({ images }) => {
                />
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                   <div className="flex gap-2 justify-end">
-                    <button 
-                      className="p-2 bg-slate-800/80 backdrop-blur-md rounded-lg text-white hover:bg-purple-600 transition-colors"
-                      title="Chat with Image"
-                      onClick={() => {
-                          // This requires App.tsx state management, but for clean separation in this specific file 
-                          // we might need to pass a handler. However, given the constraint of minimal changes
-                          // and the fact that App.tsx handles the main view, I will just replicate the visual buttons 
-                          // in the main preview in App.tsx and here just keep basic actions or relying on prop drilling if needed.
-                          // But to make it functional as requested "next to image edit button", 
-                          // I'll assume this component is primarily for display and the App.tsx handles the interactive main preview.
-                          // Actually, the prompt asks for these buttons to be available. 
-                          // To avoid huge refactors of passing callbacks through props which wasn't requested explicitly:
-                          // I will assume the main interaction happens on the "Recent Result" card in App.tsx which I updated.
-                          // But if I must update this, I need to add onChat/onEdit props.
-                          // Since I cannot change the signature of App.tsx usage in the same step easily without finding where it's used,
-                          // I will omit adding functional buttons here to avoid breaking the build, as the "Recent Result" in App.tsx
-                          // covers the primary use case for the *just generated* image.
-                          // Wait, the prompt implies "keep a button for it next to image download button". 
-                          // I should probably add them here but disabled or just leave them visual if I can't wire them.
-                          // I'll stick to the App.tsx "Recent Result" update which is the primary interaction point.
-                      }}
-                    >
-                      <MessageSquare size={20} />
-                    </button>
+                    {onChat && (
+                      <button 
+                        className="p-2 bg-slate-800/80 backdrop-blur-md rounded-lg text-white hover:bg-purple-600 transition-colors"
+                        title="Chat with Image"
+                        onClick={() => onChat(img.resultUrl)}
+                      >
+                        <MessageSquare size={20} />
+                      </button>
+                    )}
                     <a 
                       href={img.resultUrl} 
                       download={`mockup-${img.id}.png`}
@@ -60,6 +47,15 @@ export const ResultsGallery: React.FC<ResultsGalleryProps> = ({ images }) => {
                     >
                       <Download size={20} />
                     </a>
+                    {onDelete && (
+                      <button 
+                        onClick={() => { if(window.confirm('Delete this image?')) onDelete(img.id); }}
+                        className="p-2 bg-slate-800/80 backdrop-blur-md rounded-lg text-white hover:bg-red-600 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                   </div>
                </div>
             </div>

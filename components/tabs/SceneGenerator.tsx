@@ -126,7 +126,7 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
 
     // Advanced Config State
     const [compositionMode, setCompositionMode] = useState<'group' | 'single'>('single');
-    const [angleMode, setAngleMode] = useState<AngleType>(AngleType.CUSTOM);
+    const [angleMode, setAngleMode] = useState<AngleType>(AngleType.AI_BEST);
     const [customAngle, setCustomAngle] = useState({ yaw: 330, pitch: 56 });
     const [logicMode, setLogicMode] = useState<'loose' | 'strict'>('strict');
     const [fidelityEnabled, setFidelityEnabled] = useState(false);
@@ -325,12 +325,17 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
                 aspectRatio: selectedAspectRatio,
                 lighting: { brightness: 50, temperature: 50 },
                 productLabel: label,
-                fullVisibilityMode: compositionMode === 'group',
+                fullVisibilityMode: true, // Force full visibility for group shots
                 isAlphaMode,
                 antiDuplicateStrength: logicMode === 'strict' ? 'high' : 'low',
                 fidelityMode: fidelityEnabled ? 'high' : 'off',
                 referenceImage: isCustomRoom ? referenceImage : undefined
             };
+
+            // Enhance prompt for group shots to ensure all products are used and kept separate
+            if (compositionMode === 'group') {
+                options.customPrompt = `A high-end showroom group shot featuring EXACTLY ${sourceImages.length} separate, distinct catalog items. Arrange them neatly with clear space between each item. Do NOT merge, blend, or fuse different products into one hybrid object. Each product must be its own independent piece of furniture. ${options.customPrompt}`;
+            }
 
             const { resultBase64 } = await generateScene(sourceImages, options as any);
 
@@ -396,8 +401,8 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
     const renderMainContent = () => {
         if (activeView === 'result' && resultImage) {
             return (
-                <div key="result" className="relative group w-full h-full flex items-center justify-center p-8 pb-40 animate-in fade-in zoom-in-[0.98] duration-500 ease-out-quint">
-                    <img src={resultImage.resultUrl} className="max-w-[90vw] max-h-[80vh] object-contain shadow-2xl rounded-lg" />
+                <div key="result" className="relative group w-full h-full flex items-center justify-center p-4 md:p-8 pb-40 animate-in fade-in zoom-in-[0.98] duration-500 ease-out-quint">
+                    <img src={resultImage.resultUrl} className="max-w-[95vw] md:max-w-[90vw] max-h-[75vh] md:max-h-[80vh] object-contain shadow-2xl rounded-lg" />
                     <div className="absolute top-6 left-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
                         <Button onClick={() => onTransfer(resultImage.resultUrl, 'editor')} variant="secondary" className="text-xs">Edit</Button>
                         <Button onClick={() => onTransfer(resultImage.resultUrl, 'upscale')} variant="secondary" className="text-xs">Upscale</Button>
@@ -411,8 +416,8 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
         // Only show single input if in single mode
         if (activeSession?.type === 'single') {
             return (
-                <div key="single-input" className="relative w-full h-full flex items-center justify-center p-8 pb-40 animate-in fade-in zoom-in-[0.98] duration-500 ease-out-quint">
-                    <img src={activeSession.data} className="max-w-[85vw] max-h-[75vh] object-contain shadow-2xl rounded-lg" />
+                <div key="single-input" className="relative w-full h-full flex items-center justify-center p-4 md:p-8 pb-40 animate-in fade-in zoom-in-[0.98] duration-500 ease-out-quint">
+                    <img src={activeSession.data} className="max-w-[90vw] md:max-w-[85vw] max-h-[70vh] md:max-h-[75vh] object-contain shadow-2xl rounded-lg" />
                     <div className="absolute top-6 left-1/2 -translate-x-1/2 glass-panel px-3 py-2 rounded-full flex items-center gap-2 z-30 hover:scale-105 transition-transform bg-black/40 backdrop-blur-md border border-white/10">
                         <input 
                         value={imageLabels[activeIndex] || ''} 
@@ -431,8 +436,8 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
              const groupSources = activeSession.data.sources || [];
              
              return (
-                 <div key="group-grid" className="w-full h-full flex flex-col items-center justify-center p-8 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                     <div className="flex flex-wrap gap-4 justify-center max-w-4xl">
+                 <div key="group-grid" className="w-full h-full flex flex-col items-center justify-center p-4 md:p-8 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                     <div className="flex flex-wrap gap-3 md:gap-4 justify-center max-w-4xl">
                          {groupSources.map((src, idx) => (
                              <div key={idx} className="relative w-32 h-32 md:w-48 md:h-48 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer hover:border-purple-500 transition-all hover:scale-105">
                                  <img src={src} className="w-full h-full object-cover" />
@@ -506,7 +511,7 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
                  </div>
                  
                  {/* Controls Bar */}
-                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[95vw] lg:max-w-[90vw] flex flex-col items-center">
+                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[95vw] lg:max-w-[90vw] flex flex-col items-center">
                       {/* Show generation controls if we have valid inputs OR no inputs (empty state) */}
                       {activeView === 'input' && (activeSession?.type === 'single' || activeSession?.type === 'group' || inputs.length === 0) && (
                           <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 flex flex-wrap lg:flex-nowrap justify-center lg:justify-start items-center gap-3 shadow-2xl backdrop-blur-md relative animate-in slide-in-from-bottom-4 duration-500 ease-out-quint">
@@ -611,26 +616,43 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
 
                       {/* Result Refinement Bar */}
                       {activeView === 'result' && (
-                          <div className="w-full max-w-xl bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 flex items-center gap-2 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 duration-500 ease-out-quint">
-                              <div className="w-10 h-10 rounded-xl bg-purple-900/20 flex items-center justify-center text-purple-400 shrink-0">
-                                  {isRefining ? <Zap size={18} className="animate-spin"/> : <MessageSquare size={18}/>}
+                          <div className="w-full max-w-xl bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 flex flex-col shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 duration-500 ease-out-quint">
+                              <div className="flex items-center gap-2 w-full">
+                                  <div className="w-10 h-10 rounded-xl bg-purple-900/20 flex items-center justify-center text-purple-400 shrink-0">
+                                      {isRefining ? <Zap size={18} className="animate-spin"/> : <MessageSquare size={18}/>}
+                                  </div>
+                                  <input 
+                                    type="text" 
+                                    value={refinePrompt}
+                                    onChange={(e) => setRefinePrompt(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
+                                    placeholder="Talk to the image to edit..."
+                                    className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-slate-500"
+                                    disabled={isRefining}
+                                  />
+                                  <button 
+                                    onClick={handleRefine}
+                                    disabled={!refinePrompt.trim() || isRefining}
+                                    className="p-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-700 text-white rounded-xl transition-colors shrink-0"
+                                  >
+                                      <Send size={16} />
+                                  </button>
                               </div>
-                              <input 
-                                type="text" 
-                                value={refinePrompt}
-                                onChange={(e) => setRefinePrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
-                                placeholder="Talk to the image to edit..."
-                                className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-slate-500"
-                                disabled={isRefining}
-                              />
-                              <button 
-                                onClick={handleRefine}
-                                disabled={!refinePrompt.trim() || isRefining}
-                                className="p-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-700 text-white rounded-xl transition-colors"
-                              >
-                                  <Send size={16} />
-                              </button>
+                              {resultImage?.sourceImages && resultImage.sourceImages.length > 1 && (
+                                  <div className="flex items-center gap-2 px-2 pb-1 pt-2 border-t border-white/5 mt-2 overflow-x-auto custom-scrollbar">
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Call out:</span>
+                                      {resultImage.sourceImages.map((src, idx) => (
+                                          <button 
+                                              key={idx} 
+                                              onClick={() => setRefinePrompt(prev => prev + (prev ? ' ' : '') + `[Product ${idx + 1}]`)}
+                                              className="flex items-center gap-1.5 px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md transition-colors shrink-0"
+                                          >
+                                              <img src={src} className="w-4 h-4 rounded object-cover" />
+                                              <span className="text-[10px] font-medium text-slate-300 whitespace-nowrap">[Product {idx + 1}]</span>
+                                          </button>
+                                      ))}
+                                  </div>
+                              )}
                           </div>
                       )}
 
@@ -732,11 +754,12 @@ export const SceneGenerator: React.FC<SceneGeneratorProps> = ({ inputs, setInput
                                      </div>
                                      <div className={`w-10 h-10 rounded-lg overflow-hidden shrink-0 border transition-all relative ${isActive ? 'border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'border-white/10 opacity-70 hover:opacity-100'}`}>
                                          <img src={img} className="w-full h-full object-cover" alt={`Image ${i+1}`} />
-                                         {isSelected && (
-                                             <div className="absolute inset-0 bg-purple-500/50 flex items-center justify-center">
-                                                 <CheckCircle2 size={16} className="text-white"/>
-                                             </div>
-                                         )}
+                                         <div 
+                                            onClick={(e) => { e.stopPropagation(); toggleSelection(i, true); }}
+                                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all z-10 ${isSelected ? 'bg-purple-500 border-purple-500' : 'bg-black/40 border-white/20 hover:border-white/40'}`}
+                                         >
+                                             {isSelected && <CheckCircle2 size={10} className="text-white"/>}
+                                         </div>
                                      </div>
                                      <div className="flex-1 min-w-0">
                                          <div className={`text-[11px] font-bold ${isActive ? 'text-white' : 'text-slate-400'}`}>Image {i + 1}</div>

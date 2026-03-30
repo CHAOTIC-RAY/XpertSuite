@@ -82,6 +82,13 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
     You must NOT alter the product's geometry, shape, logo, text, or key design features.
     The product must look identical to the input, placed naturally in the new environment.
     Do NOT hallucinate new parts on the product.
+    
+    NEGATIVE CONSTRAINTS:
+    - NO hybrid objects.
+    - NO merging of different products.
+    - NO fused furniture.
+    - NO overlapping that obscures the product's form.
+    - NO distortion of original proportions.
     `;
 
     // 1. Alpha/ISO Mode Handling (White Background)
@@ -101,11 +108,18 @@ export const generateScene = async (images: string[], options: SceneGenOptions):
     if (options.fullVisibilityMode && images.length > 1) {
         prompt += `
         GROUP SHOT COMPOSITION (CRITICAL):
-        - You have received ${images.length} distinct input images.
+        - You have received EXACTLY ${images.length} SEPARATE and INDEPENDENT input images.
         - You MUST include ALL ${images.length} items in the final composition.
-        - Arrange them side-by-side or in an artistic cluster.
+        - Treat each image as a unique, non-interchangeable asset.
+        - Arrange them in a clean "Showroom" or "Catalog" layout with CLEAR SPACE between each item.
         - DO NOT OMIT ANY PRODUCT.
-        - ENSURE FULL VISIBILITY of every item. Do not crop them.
+        - ENSURE FULL VISIBILITY of every item. Do not crop or overlap them.
+        - CRITICAL: Keep each product as a SEPARATE, DISTINCT object. 
+        - ABSOLUTELY NO merging, blending, or fusing of different products. 
+        - Each product must maintain its own individual geometry, scale, and design.
+        - If one is a chair and another is a table, they must remain a chair and a table, not a hybrid.
+        - Place them as if they are separate pieces of furniture on a floor or stage.
+        - Total products to render: ${images.length}.
         `;
     } else {
         // Single Item Focus

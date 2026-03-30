@@ -12,6 +12,7 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.set("trust proxy", 1);
   app.use(express.json());
   app.use(
     cookieSession({
@@ -24,14 +25,19 @@ async function startServer() {
     })
   );
 
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.APP_URL || `http://localhost:${PORT}`}/auth/google/callback`
-  );
+  const getRedirectUri = (req: express.Request) => {
+    if (process.env.APP_URL) return `${process.env.APP_URL}/auth/google/callback`;
+    const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    return `${protocol}://${req.headers.host}/auth/google/callback`;
+  };
 
   // Auth URL
   app.get("/api/auth/google/url", (req, res) => {
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        getRedirectUri(req)
+    );
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: [
@@ -48,6 +54,11 @@ async function startServer() {
   app.get("/auth/google/callback", async (req, res) => {
     const { code } = req.query;
     try {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        getRedirectUri(req)
+      );
       const { tokens } = await oauth2Client.getToken(code as string);
       req.session!.tokens = tokens;
       
@@ -78,6 +89,11 @@ async function startServer() {
       return res.status(401).json({ error: "Not authenticated" });
     }
     try {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        getRedirectUri(req)
+      );
       oauth2Client.setCredentials(req.session.tokens);
       const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
       const userInfo = await oauth2.userinfo.get();
@@ -99,6 +115,11 @@ async function startServer() {
     
     const { data } = req.body;
     try {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        getRedirectUri(req)
+      );
       oauth2Client.setCredentials(req.session.tokens);
       const drive = google.drive({ version: "v3", auth: oauth2Client });
 
@@ -146,6 +167,11 @@ async function startServer() {
     if (!req.session?.tokens) return res.status(401).json({ error: "Not authenticated" });
     
     try {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        getRedirectUri(req)
+      );
       oauth2Client.setCredentials(req.session.tokens);
       const drive = google.drive({ version: "v3", auth: oauth2Client });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Wand2, Compass, Maximize2, BoxSelect, Palette, FileCode, ClipboardCheck, History as HistoryIcon, Images, Film, Home, FileText, Cloud, CloudUpload, CloudDownload, LogOut, LogIn } from 'lucide-react';
+import { Settings, X, Wand2, Compass, Maximize2, BoxSelect, Palette, FileCode, ClipboardCheck, History as HistoryIcon, Images, Film, Home, FileText, Cloud, CloudUpload, CloudDownload, LogOut, LogIn, Layers } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { SceneGenerator } from './components/tabs/SceneGenerator';
 import { AngleStudio } from './components/tabs/AngleStudio';
@@ -11,6 +11,7 @@ import { DesignAudit } from './components/tabs/DesignAudit';
 import { VideoInterpolator } from './components/tabs/VideoInterpolator';
 import { PdfIntelligence } from './components/tabs/PdfIntelligence';
 import { History } from './components/tabs/History';
+import { BulkMockup } from './components/tabs/BulkMockup';
 import { GeneratedImage, PdfDocument, ChatMessage } from './types';
 import { sounds } from './services/soundService';
 
@@ -60,10 +61,10 @@ const SettingsModal = ({ isOpen, onClose, user, onLogin, onLogout, onBackup, onR
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center animate-in fade-in p-4">
-            <div className="glass-panel rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in zoom-in-95 duration-300 border border-white/10">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Settings size={20} className="text-purple-400"/> System Settings</h2>
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center animate-in fade-in p-6">
+            <div className="glass-panel rounded-[2rem] w-full max-w-md p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 border border-white/10">
+                <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
+                <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-2"><Settings size={20} className="text-purple-400"/> System Settings</h2>
                 
                 <div className="space-y-6">
                     {/* API Key Section */}
@@ -179,7 +180,7 @@ const PageTransition = ({ children, transitionKey, isScrollable }: { children?: 
 );
 
 export const App: React.FC = () => {
-  const [activePage, setActivePage] = useState<'landing' | 'generator' | 'editor' | 'history' | 'angle_studio' | 'upscale' | 'svg_converter' | 'style_transfer' | 'audit' | 'video' | 'pdf'>('landing');
+  const [activePage, setActivePage] = useState<'landing' | 'generator' | 'editor' | 'history' | 'angle_studio' | 'upscale' | 'svg_converter' | 'style_transfer' | 'audit' | 'video' | 'pdf' | 'bulk_mockup'>('landing');
   const [showSettings, setShowSettings] = useState(false);
   const [user, setUser] = useState<any>(null);
   
@@ -189,7 +190,11 @@ export const App: React.FC = () => {
   const [editInputs, setEditInputs] = useState<string[]>([]);
   const [styleInputs, setStyleInputs] = useState<string[]>([]);
   const [videoInputs, setVideoInputs] = useState<string[]>([]);
+  const [bulkBaseImage, setBulkBaseImage] = useState<string | null>(null);
+  const [bulkPatterns, setBulkPatterns] = useState<{data: string, pillowCount: number}[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [cardOrder, setCardOrder] = useState<string[]>([]);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   
   // PDF State (Lifted for persistence during session, not saved to localStorage due to File object)
   const [pdfDocuments, setPdfDocuments] = useState<PdfDocument[]>([]);
@@ -203,8 +208,8 @@ export const App: React.FC = () => {
       .catch(() => setUser(null));
   }, []);
 
-  useEffect(() => { const c = localStorage.getItem(STORAGE_KEY); if (c) { try { const d = JSON.parse(c); setGenInputs(d.gen||[]); setAngleInputs(d.ang||[]); setUpscaleInputs(d.up||[]); setEditInputs(d.edit||[]); setStyleInputs(d.style||[]); setVideoInputs(d.video||[]); setGeneratedImages(d.genImg||[]); } catch(e){} } }, []);
-  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, genImg: generatedImages })); } catch (e) {} }, [genInputs, angleInputs, upscaleInputs, editInputs, styleInputs, videoInputs, generatedImages]);
+  useEffect(() => { const c = localStorage.getItem(STORAGE_KEY); if (c) { try { const d = JSON.parse(c); setGenInputs(d.gen||[]); setAngleInputs(d.ang||[]); setUpscaleInputs(d.up||[]); setEditInputs(d.edit||[]); setStyleInputs(d.style||[]); setVideoInputs(d.video||[]); setBulkBaseImage(d.bulkBase||null); setBulkPatterns(d.bulkPat?.map((p: any) => typeof p === 'string' ? { data: p, pillowCount: 0 } : p) || []); setGeneratedImages(d.genImg||[]); setCardOrder(d.cardOrder||[]); } catch(e){} } }, []);
+  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, bulkBase: bulkBaseImage, bulkPat: bulkPatterns, genImg: generatedImages, cardOrder })); } catch (e) {} }, [genInputs, angleInputs, upscaleInputs, editInputs, styleInputs, videoInputs, bulkBaseImage, bulkPatterns, generatedImages, cardOrder]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -234,7 +239,7 @@ export const App: React.FC = () => {
   const handleBackup = async () => {
     const data = {
         apiKey: localStorage.getItem('chaoticx_api_key'),
-        appState: { gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, genImg: generatedImages }
+        appState: { gen: genInputs, ang: angleInputs, up: upscaleInputs, edit: editInputs, style: styleInputs, video: videoInputs, genImg: generatedImages, cardOrder }
     };
     try {
         const res = await fetch('/api/drive/backup', {
@@ -262,7 +267,10 @@ export const App: React.FC = () => {
                 setEditInputs(d.edit||[]);
                 setStyleInputs(d.style||[]);
                 setVideoInputs(d.video||[]);
+                setBulkBaseImage(d.bulkBase||null);
+                setBulkPatterns(d.bulkPat||[]);
                 setGeneratedImages(d.genImg||[]);
+                setCardOrder(d.cardOrder||[]);
             }
             alert('Restore successful! Reloading...');
             window.location.reload();
@@ -283,6 +291,7 @@ export const App: React.FC = () => {
       if (target === 'style_transfer') setStyleInputs(p => [url, ...p]);
       if (target === 'editor') setEditInputs(p => [url, ...p]);
       if (target === 'video') setVideoInputs(p => [url, ...p]);
+      if (target === 'bulk_mockup') setBulkBaseImage(url);
   };
 
   const handleClearImage = (index: number) => {
@@ -292,6 +301,10 @@ export const App: React.FC = () => {
      if (activePage === 'style_transfer') setStyleInputs(p => p.filter((_, i) => i !== index));
      if (activePage === 'editor') setEditInputs(p => p.filter((_, i) => i !== index));
      if (activePage === 'video') setVideoInputs(p => p.filter((_, i) => i !== index));
+     if (activePage === 'bulk_mockup') {
+        if (index === -1) setBulkBaseImage(null);
+        else setBulkPatterns(p => p.filter((_, i) => i !== index));
+     }
   };
 
   const handleClearAll = () => {
@@ -301,10 +314,65 @@ export const App: React.FC = () => {
       if (activePage === 'style_transfer') setStyleInputs([]);
       if (activePage === 'editor') setEditInputs([]);
       if (activePage === 'video') setVideoInputs([]);
+      if (activePage === 'bulk_mockup') { setBulkBaseImage(null); setBulkPatterns([]); }
+  };
+
+  const handleGlobalDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsGlobalDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files).filter((f: File) => f.type.startsWith('image/'));
+      if (files.length === 0) return;
+
+      const promises = files.map((file: File) => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(promises).then(base64s => {
+        if (activePage === 'generator') setGenInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'angle_studio') setAngleInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'upscale') setUpscaleInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'editor') setEditInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'style_transfer') setStyleInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'video') setVideoInputs(prev => [...prev, ...base64s]);
+        else if (activePage === 'bulk_mockup') {
+            if (!bulkBaseImage) {
+                setBulkBaseImage(base64s[0]);
+                if (base64s.length > 1) setBulkPatterns(prev => [...prev, ...base64s.slice(1)]);
+            } else {
+                setBulkPatterns(prev => [...prev, ...base64s]);
+            }
+        }
+        else {
+            // Default to generator if on landing or other page
+            setActivePage('generator');
+            setGenInputs(prev => [...prev, ...base64s]);
+        }
+      });
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-[#020202] text-slate-200 font-sans selection:bg-purple-500/30 overflow-hidden flex flex-col md:flex-row">
+    <div 
+        className="fixed inset-0 bg-[#020202] text-slate-200 font-sans selection:bg-purple-500/30 overflow-hidden flex flex-col md:flex-row"
+        onDragOver={(e) => { e.preventDefault(); setIsGlobalDragging(true); }}
+        onDragLeave={() => setIsGlobalDragging(false)}
+        onDrop={handleGlobalDrop}
+    >
+      {isGlobalDragging && (
+          <div className="fixed inset-0 z-[1000] bg-purple-600/20 backdrop-blur-sm border-4 border-dashed border-purple-500 flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-300">
+              <div className="bg-black/80 p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center gap-4">
+                  <Images size={64} className="text-purple-400 animate-bounce" />
+                  <div className="text-2xl font-black text-white uppercase tracking-tighter">Drop to Import Images</div>
+                  <div className="text-slate-400 text-sm">Release to add images to your current workspace</div>
+              </div>
+          </div>
+      )}
       <SettingsModal 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
@@ -330,6 +398,7 @@ export const App: React.FC = () => {
                   <SidebarButton active={activePage === 'upscale'} icon={Maximize2} label="GigaXpert" onClick={() => setActivePage('upscale')} />
                   <SidebarButton active={activePage === 'editor'} icon={BoxSelect} label="Magic Edit" onClick={() => setActivePage('editor')} />
                   <SidebarButton active={activePage === 'style_transfer'} icon={Palette} label="Style Transfer" onClick={() => setActivePage('style_transfer')} />
+                  <SidebarButton active={activePage === 'bulk_mockup'} icon={Layers} label="Bulk Mockup" onClick={() => setActivePage('bulk_mockup')} />
                   <SidebarButton active={activePage === 'svg_converter'} icon={FileCode} label="Vectorize" onClick={() => setActivePage('svg_converter')} />
                   <SidebarButton active={activePage === 'audit'} icon={ClipboardCheck} label="Design Audit" onClick={() => setActivePage('audit')} />
                   <SidebarButton active={activePage === 'pdf'} icon={FileText} label="PDF Intel" onClick={() => setActivePage('pdf')} />
@@ -340,7 +409,7 @@ export const App: React.FC = () => {
       )}
 
       {activePage !== 'landing' && (
-          <div className="md:hidden fixed bottom-0 left-0 right-0 h-[70px] bg-[#020202] border-t border-white/10 z-[100] flex items-center justify-between px-2 pb-2 pt-1 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] overflow-x-auto no-scrollbar gap-1">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 h-[76px] bg-[#020202]/90 backdrop-blur-xl border-t border-white/10 z-[100] flex items-center justify-between px-4 pb-3 pt-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] overflow-x-auto no-scrollbar gap-3">
                <MobileNavButton active={activePage === 'landing'} icon={Home} label="Home" onClick={() => setActivePage('landing')} />
                <MobileNavButton active={activePage === 'generator'} icon={Wand2} label="Scene" onClick={() => setActivePage('generator')} />
                <MobileNavButton active={activePage === 'angle_studio'} icon={Compass} label="Angle" onClick={() => setActivePage('angle_studio')} />
@@ -351,19 +420,27 @@ export const App: React.FC = () => {
           </div>
       )}
 
-      <div className={`flex-1 relative bg-black flex flex-col ${activePage !== 'landing' ? 'mb-[70px] md:mb-0 overflow-hidden' : 'overflow-y-auto'}`}>
+      <div className={`flex-1 relative bg-black flex flex-col ${activePage !== 'landing' ? 'mb-[76px] md:mb-0 overflow-hidden' : 'overflow-y-auto'}`}>
           <PageTransition transitionKey={activePage} isScrollable={activePage === 'landing'}>
-            {activePage === 'landing' && <LandingPage onNavigate={(p) => { sounds.playClick(); setActivePage(p); }} onOpenSettings={() => setShowSettings(true)} />}
+            {activePage === 'landing' && (
+                <LandingPage 
+                    onNavigate={(p) => { sounds.playClick(); setActivePage(p); }} 
+                    onOpenSettings={() => setShowSettings(true)} 
+                    cardOrder={cardOrder}
+                    onOrderChange={setCardOrder}
+                />
+            )}
             {activePage === 'generator' && <SceneGenerator inputs={genInputs} setInputs={setGenInputs} onGenerate={handleGenerate} onTransfer={handleTransfer} handleClearImage={handleClearImage} handleClearAll={handleClearAll} generatedImages={generatedImages} onDeleteImages={handleDeleteImages} />}
             {activePage === 'angle_studio' && <AngleStudio inputs={angleInputs} setInputs={setAngleInputs} onGenerate={handleGenerate} onTransfer={handleTransfer} />}
             {activePage === 'video' && <VideoInterpolator inputs={videoInputs} setInputs={setVideoInputs} onGenerate={handleGenerate} />}
             {activePage === 'upscale' && <Upscale inputs={upscaleInputs} setInputs={setUpscaleInputs} onGenerate={handleGenerate} generatedImages={generatedImages} />}
             {activePage === 'editor' && <MagicEditor inputs={editInputs} setInputs={setEditInputs} onGenerate={handleGenerate} />}
             {activePage === 'style_transfer' && <StyleTransfer inputs={styleInputs} setInputs={setStyleInputs} onGenerate={handleGenerate} generatedImages={generatedImages} />}
+            {activePage === 'bulk_mockup' && <BulkMockup baseImage={bulkBaseImage} setBaseImage={setBulkBaseImage} patterns={bulkPatterns} setPatterns={setBulkPatterns} onGenerate={handleGenerate} />}
             {activePage === 'svg_converter' && <SvgConverter />}
             {activePage === 'audit' && <DesignAudit />}
             {activePage === 'pdf' && <PdfIntelligence documents={pdfDocuments} setDocuments={setPdfDocuments} chatHistory={pdfChatHistory} setChatHistory={setPdfChatHistory} onGenerate={handleGenerate} />}
-            {activePage === 'history' && <History images={generatedImages} onClear={() => { setGeneratedImages([]); localStorage.removeItem(STORAGE_KEY); }} />}
+            {activePage === 'history' && <History images={generatedImages} onDelete={(id) => handleDeleteImages([id])} onChat={(url) => handleTransfer(url, 'editor')} onClear={() => { setGeneratedImages([]); localStorage.removeItem(STORAGE_KEY); }} />}
           </PageTransition>
       </div>
     </div>

@@ -9,6 +9,10 @@ declare global {
       ) => void;
     };
     pdfjsLib: any;
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
   }
 }
 
@@ -26,7 +30,7 @@ export interface GeneratedImage {
   sourceImages?: string[]; // For group shots
   resultUrl: string;
   prompt: string;
-  type: 'mockup' | 'remove-bg' | 'upscale' | 'angle' | 'edit' | 'smartedited' | 'style-transfer' | 'video' | 'pdf-analysis';
+  type: 'mockup' | 'remove-bg' | 'upscale' | 'angle' | 'edit' | 'smartedited' | 'style-transfer' | 'video' | 'pdf-analysis' | 'bulk-mockup';
   timestamp: number;
   fidelityScore?: number;
   modelUsed?: string;
